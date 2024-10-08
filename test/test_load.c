@@ -28,9 +28,6 @@ int main()
         puts("Parsed all!\n");
 
         int task_id = json_object_get_int(id);
-        // char task_desc[80];
-        // strncpy(task_desc, json_object_get_string(desc), 79);
-        // task_desc[79] = '\0';
         const char *task_desc = json_object_get_string(desc);
         int task_status = json_object_get_int(status);
         puts("Got all!\n");
@@ -45,10 +42,10 @@ int main()
             task_desc,
             TASK_STATUS_STRINGS[task_status]);
 
-        json_object_put(elem);
         json_object_put(id);     // Free the data
         json_object_put(desc);   // Free the data
         json_object_put(status); // Free the data
+        json_object_put(elem);   // Free the data
     }
     json_object_put(jobj); // Free the data
     return 0;
