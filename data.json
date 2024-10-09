@@ -1,12 +1,12 @@
 [
     {
         "id": 1,
-        "desc": "testing addition #4",
+        "desc": "brush your teeth",
         "status": 1
     },
     {
         "id": 2,
-        "desc": "testing addition #1",
+        "desc": "take bath",
         "status": 1
     }
 ]

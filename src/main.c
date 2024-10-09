@@ -31,6 +31,7 @@ typedef struct
 } task;
 // Task (internal functions)
 int _task_get_max_task_id();
+int _task_get_index_by_task_id(int task_id);
 void _task_print(task t);
 
 // Runtime Database
@@ -86,7 +87,17 @@ void app_cli(int argc, char *argv[]) {
         task_add(argv[2]);
         printf("New task successfully added.\n");
         _task_print(tasks[tasks_count - 1]);
+        return;
     }
+    if (strncmp("update", argv[1], 6) == 0 && argc == 4) {
+        printf("Updating a task into database...\n");
+        task_update_desc(atoi(argv[2]), argv[3]);
+        printf("Updated task description successfully.\n");
+        _task_print(tasks[_task_get_index_by_task_id(atoi(argv[2]))]);
+        return;
+    }
+
+    // Add more
 }
 
 void tasks_load(const char *filename)
@@ -215,9 +226,16 @@ void task_show_all()
     }
 }
 
+int _task_get_index_by_task_id(int task_id) {
+    for (int i = 0; i<tasks_count; i++) {
+        if (tasks[i].id == task_id) return i;
+    }
+    return -1; // FAILURE
+}
+
 void task_update_desc(int id, const char *desc_updated)
 {
-    assert(desc_updated != NULL && id < 0);
+    assert(desc_updated != NULL && id > 0);
     if (tasks_count < 1)
     {
         fprintf(stderr, "No Tasks available to show!\n");
