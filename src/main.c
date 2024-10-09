@@ -5,7 +5,16 @@
 #include <unistd.h>
 #include <json-c/json.h>
 #define MAX_TASKS 100
-const char *JSON_DATABASE_PATH = "data.json";
+const char *JSON_DATABASE_PATH = "../data.json";
+
+#define DEBUGGING_ARGS(argc, argv)                  \
+    do {                                            \
+        printf("Args count: %d\n", argc);           \
+        for (int i = 0; i<argc; i++) {              \
+            printf("Argv[%d] = %s\n", i, argv[i]);  \
+        }                                           \
+        printf("\n\n");                             \
+    } while(0)                                      \
 
 typedef enum
 {
@@ -21,6 +30,7 @@ typedef struct
     TaskStatus status;
 } task;
 // Task (internal functions)
+int _task_get_max_task_id();
 void _task_print(task t);
 
 // Runtime Database
@@ -40,92 +50,107 @@ void task_update_status(int id, TaskStatus status_updated);
 void task_delete_one(int id);
 void task_delete_all();
 
+// Task Tracker CLI App
+void app_cli(int argc, char *argv[]);
+
 int main(int argc, char *argv[])
 {
-    printf("Loading JSON Database...");
+    printf("Loading JSON Database...\n");
     tasks_load(JSON_DATABASE_PATH);
 
-    printf("Saving JSON Database...");
+    // Show all tasks for debugging purposes (before)
+    printf("Showing all tasks..\n");
+    task_show_all();
+
+    app_cli(argc, argv);
+
+    // Show all tasks for debugging purposes (after)
+    printf("Showing all tasks..\n");
+    task_show_all();
+
+    printf("Saving JSON Database...\n");
     tasks_save(JSON_DATABASE_PATH);
     return 0;
 }
 
-// void tasks_load(const char *filename)
-// {
-//     assert(filename != NULL);
-//     if (access(filename, F_OK) == 0)
-//     {
-//         // file exists
-//         struct json_object *jobj = json_object_from_file(filename);
-//         if (jobj == NULL)
-//         {
-//             fprintf(stderr, "Error reading the file!");
-//         }
-//         struct task *tasks_array = json_object_get_array(jobj);
-//     }
-//     else
-//     {
-//         // file doesn't exist
-//         fprintf(stderr, "Database JSON file: %s Not Found!!\n", filename);
-//         printf("A new database JSON file: %s is being created...\n", filename);
+//*********************************************************************************/
+//------------------------------- Source Definitions ------------------------------- 
+//*********************************************************************************/
 
-//         // Open the file for writing (creates if it doesn't exist)
-//         FILE *file = fopen(filename, "w");
-//         if (file == NULL)
-//         {
-//             perror("Fatal Error while creating file!");
-//             exit(EXIT_FAILURE);
-//         }
-//         // Write the empty JSON array
-//         fprintf(file, "[]");
-//         // Close the file
-//         fclose(file);
-//     }
-// }
+void app_cli(int argc, char *argv[]) {
+    DEBUGGING_ARGS(argc, argv);
+    assert(argc >= 2 && argc <= 4);
+
+    if (strncmp("add", argv[1], 3) == 0 && argc == 3) {
+        printf("Adding new task into database...\n");
+        task_add(argv[2]);
+        printf("New task successfully added.\n");
+        _task_print(tasks[tasks_count - 1]);
+    }
+}
 
 void tasks_load(const char *filename)
 {
     assert(filename != NULL);
-
     // Read the json object from filename
-    struct json_object *jobj = json_object_from_file(filename);
-    assert(jobj != NULL);
+    json_object *jobj_array = json_object_from_file(filename);
+    if (jobj_array == NULL); {
+        // This indicates file doesn't exist
+        printf("Database: \"%s\" not found!\n", filename);
+        printf("Creating New Database: \"%s\"!\n", filename);
+    }
 
     // Verify the type of json object as json_array_type
-    enum json_type type = json_object_get_type(jobj);
-    assert(json_object_is_type(jobj, json_type_array));
+    enum json_type type = json_object_get_type(jobj_array);
+    assert(json_object_is_type(jobj_array, json_type_array));
 
     // Get the length of json array
-    size_t array_length = json_object_array_length(jobj);
-    printf("Size of array: %ld\n", array_length);
+    size_t array_length = json_object_array_length(jobj_array);
+    // printf("Size of json array: %ld\n", array_length);
 
     // Getting all contents in the Tasks array
     for (size_t i = 0; i < array_length; i++)
     {
-        json_object *elem = json_object_array_get_idx(jobj, i);
-        json_object *id = json_object_object_get(elem, "id");
-        json_object *desc = json_object_object_get(elem, "desc");
-        json_object *status = json_object_object_get(elem, "status");
+        json_object *jobj_task = json_object_array_get_idx(jobj_array, i);
+        json_object *id = json_object_object_get(jobj_task, "id");
+        json_object *desc = json_object_object_get(jobj_task, "desc");
+        json_object *status = json_object_object_get(jobj_task, "status");
 
         // Load the data into tasks runtime memory
         tasks[i].id = json_object_get_int(id);
         strncpy(tasks[i].desc, json_object_get_string(desc), 79);
+        tasks[i].desc[79] = '\0';
         tasks[i].status = json_object_get_int(status);
         tasks_count++;
-
-        json_object_put(elem);
-        json_object_put(id);     // Free the data
-        json_object_put(desc);   // Free the data
-        json_object_put(status); // Free the data
     }
-    json_object_put(jobj); // Free the data
+    json_object_put(jobj_array); // Free the data
 }
 
 void tasks_save(const char *filename)
 {
     assert(filename != NULL);
-    json_object *jobj_array = json_object_new_array_ext(tasks_count);
-    json_object_to_file(filename, jobj_array);
+    json_object *jobj_array = json_object_new_array();
+    for (size_t i = 0; i<tasks_count; i++) {
+        json_object *jobj_task = json_object_new_object();
+        json_object *jobj_task_id = json_object_new_int(tasks[i].id);
+        json_object *jobj_task_desc = json_object_new_string(tasks[i].desc);
+        json_object *jobj_task_status = json_object_new_int(tasks[i].status);
+
+        json_object_object_add(jobj_task, "id", jobj_task_id);
+        json_object_object_add(jobj_task, "desc", jobj_task_desc);
+        json_object_object_add(jobj_task, "status", jobj_task_status);
+        json_object_array_add(jobj_array, jobj_task);
+    }
+    json_object_to_file(filename, jobj_array); // Save data to Database
+    json_object_put(jobj_array); // Free the memory for array
+}
+
+int _task_get_max_task_id() {
+    int id_max = 0;
+    for(size_t i = 0; i<tasks_count; i++) {
+        id_max = id_max > tasks[i].id ? id_max : tasks[i].id;
+    }
+    return id_max;
 }
 
 void task_add(const char *desc)
@@ -136,14 +161,7 @@ void task_add(const char *desc)
         fprintf(stderr, "Tasks array size limit reached!!\n");
         exit(EXIT_FAILURE);
     }
-    if (tasks_count < 1)
-    {
-        tasks[tasks_count].id = 1;
-    }
-    else
-    {
-        tasks[tasks_count].id = tasks[tasks_count - 1].id + 1;
-    }
+    tasks[tasks_count].id = _task_get_max_task_id() + 1;
     strncpy(tasks[tasks_count].desc, desc, 79);
     tasks[tasks_count].desc[79] = '\0';
     tasks[tasks_count].status = TODO;
@@ -191,7 +209,7 @@ void task_show_all()
         return;
     }
     printf("Here is the list of all tasks!\n");
-    for (size_t i = 0; i < tasks_count - 1; i++)
+    for (size_t i = 0; i < tasks_count; i++)
     {
         _task_print(tasks[i]);
     }
