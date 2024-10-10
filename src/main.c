@@ -48,6 +48,9 @@ void tasks_save(const char *filename);
 void task_add(const char *desc);
 void task_show_one(int id);
 void task_show_all();
+void task_show_done();
+void task_show_todo();
+void task_show_in_progress();
 void task_update_desc(int id, const char *desc_updated);
 void task_update_status(int id, TaskStatus status_updated);
 void task_delete_one(int id);
@@ -58,18 +61,20 @@ void app_cli(int argc, char *argv[]);
 
 int main(int argc, char *argv[])
 {
+    DEBUGGING_ARGS(argc, argv); // Just for testing purposes
+
     printf("Loading JSON Database...\n");
     tasks_load(JSON_DATABASE_PATH);
 
     // Show all tasks for debugging purposes (before)
-    printf("Showing all tasks..\n");
-    task_show_all();
+    // printf("Showing all tasks..\n");
+    // task_show_all();
 
     app_cli(argc, argv);
 
     // Show all tasks for debugging purposes (after)
-    printf("Showing all tasks..\n");
-    task_show_all();
+    // printf("Showing all tasks..\n");
+    // task_show_all();
 
     printf("Saving JSON Database...\n");
     tasks_save(JSON_DATABASE_PATH);
@@ -82,10 +87,9 @@ int main(int argc, char *argv[])
 
 void app_cli(int argc, char *argv[])
 {
-    DEBUGGING_ARGS(argc, argv);
     assert(argc >= 2 && argc <= 4);
 
-    if (strncmp("add", argv[1], 3) == 0 && argc == 3)
+    if (strncmp("add", argv[1], 3) == 0 && strlen(argv[1]) == 3 && argc == 3)
     {
         printf("Adding new task into database...\n");
         task_add(argv[2]);
@@ -93,7 +97,7 @@ void app_cli(int argc, char *argv[])
         _task_print(tasks[tasks_count - 1]);
         return;
     }
-    if (strncmp("update", argv[1], 6) == 0 && argc == 4)
+    if (strncmp("update", argv[1], 6) == 0 && strlen(argv[1]) == 6 && argc == 4)
     {
         printf("Updating a task into database...\n");
         task_update_desc(atoi(argv[2]), argv[3]);
@@ -101,8 +105,49 @@ void app_cli(int argc, char *argv[])
         _task_print(tasks[_task_get_index_by_task_id(atoi(argv[2]))]);
         return;
     }
+    if (strncmp("delete", argv[1], 6) == 0 && strlen(argv[1]) == 6 && argc == 3)
+    {
+        int temp_id = atoi(argv[2]);
+        printf("Deleting task with id: %d\n", temp_id);
+        task_delete_one(temp_id);
+        printf("Task deleted successfully.\n");
+        return;
+    }
 
+    if (strncmp("mark-in-progress", argv[1], 16) == 0 && strlen(argv[1]) == 16 && argc == 3)
+    {
+        int temp_id = atoi(argv[2]);
+        printf("Updating status of task: %d to mark-in-progress.\n", temp_id);
+        task_update_status(temp_id, IN_PROGRESS);
+        printf("Task Status updated sucessfully.\n");
+        return;
+    }
+    if (strncmp("mark-done", argv[1], 9) == 0 && strlen(argv[1]) == 9 && argc == 3)
+    {
+        int temp_id = atoi(argv[2]);
+        printf("Updating status of task: %d to mark-done.\n", temp_id);
+        task_update_status(temp_id, DONE);
+        printf("Task Status updated successfully.\n");
+        return;
+    }
+    if (strncmp("list", argv[1], 4) == 0 && strlen(argv[1]) == 4 && argc <= 3)
+    {
+        // list all tasks
+        if (argc == 2)
+        {
+            printf("Showing all tasks.\n");
+            task_show_all();
+            return;
+        }
+        // showing tasks which are done
+        if (strncmp("done", argv[2], 4) == 0 && strlen(argv[2]) == 4)
+        {
+            printf("Showing tasks which are done..\n");
+            /// TODO: implement a function
+        }
+    }
     // Add more
+    fprintf(stderr, "Invalid Arguments!\nsee: task-tracker --help\n");
 }
 
 void tasks_load(const char *filename)
@@ -115,6 +160,7 @@ void tasks_load(const char *filename)
         // This indicates file doesn't exist
         printf("Database: \"%s\" not found!\n", filename);
         printf("Creating New Database: \"%s\"!\n", filename);
+        return;
     }
 
     // Verify the type of json object as json_array_type
@@ -234,6 +280,23 @@ void task_show_all()
         _task_print(tasks[i]);
     }
 }
+
+void task_show_done()
+{
+    if (tasks_count < 1)
+    {
+        fprintf(stderr, "No Tasks available to show!\n");
+        return;
+    }
+    printf("Here is the list of completed tasks!\n");
+    for (size_t i = 0; i < tasks_count; i++)
+    {
+        _task_print(tasks[i]);
+    }
+}
+
+void task_show_todo();
+void task_show_in_progress();
 
 int _task_get_index_by_task_id(int task_id)
 {
