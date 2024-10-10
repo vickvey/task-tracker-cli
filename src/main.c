@@ -20,9 +20,9 @@ const char *JSON_DATABASE_PATH = "../data.json";
 
 typedef enum
 {
-    DONE = 0,
-    TODO = 1,
-    IN_PROGRESS = 2
+    TASK_STATUS_DONE = 0,
+    TASK_STATUS_TODO = 1,
+    TASK_STATUS_IN_PROGRESS = 2
 } TaskStatus;
 
 typedef struct
@@ -61,7 +61,7 @@ void app_cli(int argc, char *argv[]);
 
 int main(int argc, char *argv[])
 {
-    DEBUGGING_ARGS(argc, argv); // Just for testing purposes
+    // DEBUGGING_ARGS(argc, argv); // Just for testing purposes
 
     printf("Loading JSON Database...\n");
     tasks_load(JSON_DATABASE_PATH);
@@ -118,7 +118,7 @@ void app_cli(int argc, char *argv[])
     {
         int temp_id = atoi(argv[2]);
         printf("Updating status of task: %d to mark-in-progress.\n", temp_id);
-        task_update_status(temp_id, IN_PROGRESS);
+        task_update_status(temp_id, TASK_STATUS_IN_PROGRESS);
         printf("Task Status updated sucessfully.\n");
         return;
     }
@@ -126,7 +126,7 @@ void app_cli(int argc, char *argv[])
     {
         int temp_id = atoi(argv[2]);
         printf("Updating status of task: %d to mark-done.\n", temp_id);
-        task_update_status(temp_id, DONE);
+        task_update_status(temp_id, TASK_STATUS_DONE);
         printf("Task Status updated successfully.\n");
         return;
     }
@@ -139,11 +139,24 @@ void app_cli(int argc, char *argv[])
             task_show_all();
             return;
         }
-        // showing tasks which are done
+        // showing tasks which are TASK_STATUS_DONE
         if (strncmp("done", argv[2], 4) == 0 && strlen(argv[2]) == 4)
         {
             printf("Showing tasks which are done..\n");
-            /// TODO: implement a function
+            task_show_done();
+            return;
+        }
+        if (strncmp("todo", argv[2], 4) == 0 && strlen(argv[2]) == 4)
+        {
+            printf("Showing tasks which are yet todo..\n");
+            task_show_todo();
+            return;
+        }
+        if (strncmp("in-progress", argv[2], 11) == 0 && strlen(argv[2]) == 11)
+        {
+            printf("Showing tasks which are in-progress..\n");
+            task_show_in_progress();
+            return;
         }
     }
     // Add more
@@ -230,7 +243,7 @@ void task_add(const char *desc)
     tasks[tasks_count].id = _task_get_max_task_id() + 1;
     strncpy(tasks[tasks_count].desc, desc, 79);
     tasks[tasks_count].desc[79] = '\0';
-    tasks[tasks_count].status = TODO;
+    tasks[tasks_count].status = TASK_STATUS_TODO;
     tasks_count++;
     return;
 }
@@ -291,12 +304,40 @@ void task_show_done()
     printf("Here is the list of completed tasks!\n");
     for (size_t i = 0; i < tasks_count; i++)
     {
-        _task_print(tasks[i]);
+        if (tasks[i].status == TASK_STATUS_DONE)
+            _task_print(tasks[i]);
     }
 }
 
-void task_show_todo();
-void task_show_in_progress();
+void task_show_todo()
+{
+    if (tasks_count < 1)
+    {
+        fprintf(stderr, "No Tasks available to show!\n");
+        return;
+    }
+    printf("Here is the list of completed tasks!\n");
+    for (size_t i = 0; i < tasks_count; i++)
+    {
+        if (tasks[i].status == TASK_STATUS_TODO)
+            _task_print(tasks[i]);
+    }
+}
+
+void task_show_in_progress()
+{
+    if (tasks_count < 1)
+    {
+        fprintf(stderr, "No Tasks available to show!\n");
+        return;
+    }
+    printf("Here is the list of tasks in-progress!\n");
+    for (size_t i = 0; i < tasks_count; i++)
+    {
+        if (tasks[i].status == TASK_STATUS_IN_PROGRESS)
+            _task_print(tasks[i]);
+    }
+}
 
 int _task_get_index_by_task_id(int task_id)
 {
@@ -330,7 +371,7 @@ void task_update_desc(int id, const char *desc_updated)
 
 void task_update_status(int id, TaskStatus status_updated)
 {
-    assert(id < 0);
+    assert(id > 0);
     if (tasks_count < 1)
     {
         fprintf(stderr, "No Tasks available to show!\n");
@@ -350,7 +391,7 @@ void task_update_status(int id, TaskStatus status_updated)
 
 void task_delete_one(int id)
 {
-    assert(id < 0);
+    assert(id > 0);
     if (tasks_count < 1)
     {
         fprintf(stderr, "No Tasks available to show!\n");
