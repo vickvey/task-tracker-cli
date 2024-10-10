@@ -7,14 +7,16 @@
 #define MAX_TASKS 100
 const char *JSON_DATABASE_PATH = "../data.json";
 
-#define DEBUGGING_ARGS(argc, argv)                  \
-    do {                                            \
-        printf("Args count: %d\n", argc);           \
-        for (int i = 0; i<argc; i++) {              \
-            printf("Argv[%d] = %s\n", i, argv[i]);  \
-        }                                           \
-        printf("\n\n");                             \
-    } while(0)                                      \
+#define DEBUGGING_ARGS(argc, argv)                 \
+    do                                             \
+    {                                              \
+        printf("Args count: %d\n", argc);          \
+        for (int i = 0; i < argc; i++)             \
+        {                                          \
+            printf("Argv[%d] = %s\n", i, argv[i]); \
+        }                                          \
+        printf("\n\n");                            \
+    } while (0)
 
 typedef enum
 {
@@ -75,21 +77,24 @@ int main(int argc, char *argv[])
 }
 
 //*********************************************************************************/
-//------------------------------- Source Definitions ------------------------------- 
+//------------------------------- Source Definitions -------------------------------
 //*********************************************************************************/
 
-void app_cli(int argc, char *argv[]) {
+void app_cli(int argc, char *argv[])
+{
     DEBUGGING_ARGS(argc, argv);
     assert(argc >= 2 && argc <= 4);
 
-    if (strncmp("add", argv[1], 3) == 0 && argc == 3) {
+    if (strncmp("add", argv[1], 3) == 0 && argc == 3)
+    {
         printf("Adding new task into database...\n");
         task_add(argv[2]);
         printf("New task successfully added.\n");
         _task_print(tasks[tasks_count - 1]);
         return;
     }
-    if (strncmp("update", argv[1], 6) == 0 && argc == 4) {
+    if (strncmp("update", argv[1], 6) == 0 && argc == 4)
+    {
         printf("Updating a task into database...\n");
         task_update_desc(atoi(argv[2]), argv[3]);
         printf("Updated task description successfully.\n");
@@ -105,7 +110,8 @@ void tasks_load(const char *filename)
     assert(filename != NULL);
     // Read the json object from filename
     json_object *jobj_array = json_object_from_file(filename);
-    if (jobj_array == NULL); {
+    if (jobj_array == NULL)
+    {
         // This indicates file doesn't exist
         printf("Database: \"%s\" not found!\n", filename);
         printf("Creating New Database: \"%s\"!\n", filename);
@@ -141,7 +147,8 @@ void tasks_save(const char *filename)
 {
     assert(filename != NULL);
     json_object *jobj_array = json_object_new_array();
-    for (size_t i = 0; i<tasks_count; i++) {
+    for (size_t i = 0; i < tasks_count; i++)
+    {
         json_object *jobj_task = json_object_new_object();
         json_object *jobj_task_id = json_object_new_int(tasks[i].id);
         json_object *jobj_task_desc = json_object_new_string(tasks[i].desc);
@@ -153,12 +160,14 @@ void tasks_save(const char *filename)
         json_object_array_add(jobj_array, jobj_task);
     }
     json_object_to_file(filename, jobj_array); // Save data to Database
-    json_object_put(jobj_array); // Free the memory for array
+    json_object_put(jobj_array);               // Free the memory for array
 }
 
-int _task_get_max_task_id() {
+int _task_get_max_task_id()
+{
     int id_max = 0;
-    for(size_t i = 0; i<tasks_count; i++) {
+    for (size_t i = 0; i < tasks_count; i++)
+    {
         id_max = id_max > tasks[i].id ? id_max : tasks[i].id;
     }
     return id_max;
@@ -226,9 +235,12 @@ void task_show_all()
     }
 }
 
-int _task_get_index_by_task_id(int task_id) {
-    for (int i = 0; i<tasks_count; i++) {
-        if (tasks[i].id == task_id) return i;
+int _task_get_index_by_task_id(int task_id)
+{
+    for (int i = 0; i < tasks_count; i++)
+    {
+        if (tasks[i].id == task_id)
+            return i;
     }
     return -1; // FAILURE
 }
