@@ -1,1 +1,1 @@
-# Solve the `jobj_array == NULL` problem in `tasks_load()`.
+# Add `created_at` and `updated_at` inside `struct task` and modify accordingly.
